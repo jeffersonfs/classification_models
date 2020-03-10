@@ -13,7 +13,7 @@ keras_utils = None
 
 ModelParams = collections.namedtuple(
     'ModelParams',
-    ['model_name', 'repetitions', 'residual_block', 'attention']
+    ['model_name', 'repetitions', 'dilation_rates', 'residual_block' , 'attention']
 )
 
 
@@ -57,7 +57,7 @@ def get_bn_params(**params):
 #   Residual blocks
 # -------------------------------------------------------------------------
 
-def residual_conv_block(filters, stage, block, strides=(1, 1), attention=None, cut='pre'):
+def residual_conv_block(filters, stage, block, strides=(1, 1), dilation_rate=1, attention=None, cut='pre'):
     """The identity block is the block that has no conv layer at shortcut.
     # Arguments
         input_tensor: input tensor
@@ -86,12 +86,13 @@ def residual_conv_block(filters, stage, block, strides=(1, 1), attention=None, c
             shortcut = input_tensor
         elif cut == 'post':
             shortcut = layers.Conv2D(filters, (1, 1), name=sc_name, strides=strides, **conv_params)(x)
+            # shortcut = layers.ZeroPadding2D(padding=(1, 1))(shortcut)
         else:
             raise ValueError('Cut type not in ["pre", "post"]')
 
         # continue with convolution layers
-        x = layers.ZeroPadding2D(padding=(1, 1))(x)
-        x = layers.Conv2D(filters, (3, 3), strides=strides, name=conv_name + '1', **conv_params)(x)
+        x = layers.ZeroPadding2D(padding=(dilation_rate, dilation_rate))(x)
+        x = layers.Conv2D(filters, (3, 3), strides=strides, dilation_rate=dilation_rate,  name=conv_name + '1', **conv_params)(x)
 
         x = layers.BatchNormalization(name=bn_name + '2', **bn_params)(x)
         x = layers.Activation('relu', name=relu_name + '2')(x)
@@ -109,7 +110,7 @@ def residual_conv_block(filters, stage, block, strides=(1, 1), attention=None, c
     return layer
 
 
-def residual_bottleneck_block(filters, stage, block, strides=None, attention=None, cut='pre'):
+def residual_bottleneck_block(filters, stage, block, strides=None, attention=None, dilation_rate=1,  cut='pre'):
     """The identity block is the block that has no conv layer at shortcut.
     # Arguments
         input_tensor: input tensor
@@ -147,7 +148,7 @@ def residual_bottleneck_block(filters, stage, block, strides=None, attention=Non
         x = layers.BatchNormalization(name=bn_name + '2', **bn_params)(x)
         x = layers.Activation('relu', name=relu_name + '2')(x)
         x = layers.ZeroPadding2D(padding=(1, 1))(x)
-        x = layers.Conv2D(filters, (3, 3), strides=strides, name=conv_name + '2', **conv_params)(x)
+        x = layers.Conv2D(filters, (3, 3), strides=strides, dilation_rate=dilation_rate, name=conv_name + '2', **conv_params)(x)
 
         x = layers.BatchNormalization(name=bn_name + '3', **bn_params)(x)
         x = layers.Activation('relu', name=relu_name + '3')(x)
@@ -171,7 +172,7 @@ def residual_bottleneck_block(filters, stage, block, strides=None, attention=Non
 
 
 def ResNet(model_params, input_shape=None, input_tensor=None, include_top=True,
-           classes=1000, weights='imagenet', **kwargs):
+           classes=1000, weights='imagenet', initial_strides=1, **kwargs):
     """Instantiates the ResNet, SEResNet architecture.
     Optionally loads weights pre-trained on ImageNet.
     Note that the data format convention used by the model is
@@ -229,30 +230,42 @@ def ResNet(model_params, input_shape=None, input_tensor=None, include_top=True,
 
     # resnet bottom
     x = layers.BatchNormalization(name='bn_data', **no_scale_bn_params)(img_input)
-    x = layers.ZeroPadding2D(padding=(3, 3))(x)
-    x = layers.Conv2D(init_filters, (7, 7), strides=(2, 2), name='conv0', **conv_params)(x)
+    x = layers.ZeroPadding2D(padding=((3, 3), (3,3))) (x)
+    x = layers.Conv2D(init_filters, (7, 7), strides=(initial_strides,initial_strides), name='conv0', **conv_params)(x)
     x = layers.BatchNormalization(name='bn0', **bn_params)(x)
     x = layers.Activation('relu', name='relu0')(x)
-    x = layers.ZeroPadding2D(padding=(1, 1))(x)
+    x = layers.ZeroPadding2D(padding=((1, 1), (1, 1)) )(x)
     x = layers.MaxPooling2D((3, 3), strides=(2, 2), padding='valid', name='pooling0')(x)
-
+    
     # resnet body
-    for stage, rep in enumerate(model_params.repetitions):
+    for (stage, rep), dilation_rate in zip(enumerate(model_params.repetitions), model_params.dilation_rates):
         for block in range(rep):
 
             filters = init_filters * (2 ** stage)
 
             # first block of first stage without strides because we have maxpooling before
             if block == 0 and stage == 0:
-                x = ResidualBlock(filters, stage, block, strides=(1, 1),
+                x = ResidualBlock(filters, 
+                                  stage, 
+                                  block, 
+                                  strides=(1, 1), 
+                                  dilation_rate = dilation_rate,
                                   cut='post', attention=Attention)(x)
 
             elif block == 0:
-                x = ResidualBlock(filters, stage, block, strides=(2, 2),
+                x = ResidualBlock(filters, 
+                                  stage, 
+                                  block, 
+                                  strides=(1, 1), 
+                                  dilation_rate = dilation_rate,
                                   cut='post', attention=Attention)(x)
 
             else:
-                x = ResidualBlock(filters, stage, block, strides=(1, 1),
+                x = ResidualBlock(filters,
+                                  stage, 
+                                  block, 
+                                  strides=(1, 1), 
+                                  dilation_rate = dilation_rate,
                                   cut='pre', attention=Attention)(x)
 
     x = layers.BatchNormalization(name='bn1', **bn_params)(x)
@@ -288,15 +301,29 @@ def ResNet(model_params, input_shape=None, input_tensor=None, include_top=True,
 # -------------------------------------------------------------------------
 
 MODELS_PARAMS = {
-    'resnet18': ModelParams('resnet18', (2, 2, 2, 2), residual_conv_block, None),
-    'resnet34': ModelParams('resnet34', (3, 4, 6, 3), residual_conv_block, None),
-    'resnet50': ModelParams('resnet50', (3, 4, 6, 3), residual_bottleneck_block, None),
-    'resnet101': ModelParams('resnet101', (3, 4, 23, 3), residual_bottleneck_block, None),
-    'resnet152': ModelParams('resnet152', (3, 8, 36, 3), residual_bottleneck_block, None),
-    'seresnet18': ModelParams('seresnet18', (2, 2, 2, 2), residual_conv_block, ChannelSE),
-    'seresnet34': ModelParams('seresnet34', (3, 4, 6, 3), residual_conv_block, ChannelSE),
+    # 'resnet18dilated': ModelParams('resnet18dilated', (2, 2, 2, 2), (1, 1, 2, 4), residual_conv_block, None),
+    'resnet18': ModelParams('resnet18', (2, 2, 2, 2), (1,1,2,4), residual_conv_block, None),
+    'resnet34': ModelParams('resnet34', (3, 4, 6, 3), (1,1,2,4), residual_conv_block, None),
+    'resnet50': ModelParams('resnet50', (3, 4, 6, 3), (1,1,1,1), residual_bottleneck_block, None),
+    'resnet101': ModelParams('resnet101', (3, 4, 23, 3), (1,1,1,1), residual_bottleneck_block, None),
+    'resnet152': ModelParams('resnet152', (3, 8, 36, 3), (1,1,1,1), residual_bottleneck_block, None),
+    'seresnet18': ModelParams('seresnet18', (2, 2, 2, 2), (1,1,1,1), residual_conv_block, ChannelSE),
+    'seresnet34': ModelParams('seresnet34', (3, 4, 6, 3), (1,1,1,1), residual_conv_block, ChannelSE),
 }
 
+
+
+def ResNet18Dilated(input_shape=None, input_tensor=None, weights=None, classes=1000, include_top=True, **kwargs):
+    return ResNet(
+        MODELS_PARAMS['resnet18dilated'],
+        input_shape=input_shape,
+        input_tensor=input_tensor,
+        include_top=include_top,
+        classes=classes,
+        weights=weights,
+        initial_strides=1
+        **kwargs
+    )
 
 def ResNet18(input_shape=None, input_tensor=None, weights=None, classes=1000, include_top=True, **kwargs):
     return ResNet(
@@ -386,6 +413,7 @@ def preprocess_input(x, **kwargs):
     return x
 
 
+setattr(ResNet18Dilated, '__doc__', ResNet.__doc__)
 setattr(ResNet18, '__doc__', ResNet.__doc__)
 setattr(ResNet34, '__doc__', ResNet.__doc__)
 setattr(ResNet50, '__doc__', ResNet.__doc__)
