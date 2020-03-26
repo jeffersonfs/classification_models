@@ -244,7 +244,7 @@ def ResNet(model_params, input_shape=None, input_tensor=None, include_top=True,
             filters = init_filters * (2 ** stage)
 
             # first block of first stage without strides because we have maxpooling before
-            if block == 0 and stage == 0:
+            if block == 0 and ( stage == 0 or stage == 1) :
                 x = ResidualBlock(filters, 
                                   stage, 
                                   block, 
@@ -321,7 +321,7 @@ def ResNet18Dilated(input_shape=None, input_tensor=None, weights=None, classes=1
         include_top=include_top,
         classes=classes,
         weights=weights,
-        initial_strides=2,
+        initial_strides=1,
         **kwargs
     )
 
