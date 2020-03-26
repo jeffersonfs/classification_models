@@ -248,15 +248,15 @@ def ResNet(model_params, input_shape=None, input_tensor=None, include_top=True,
                 x = ResidualBlock(filters, 
                                   stage, 
                                   block, 
-                                  strides=(1, 1), 
+                                  strides=(2, 2),
                                   dilation_rate = dilation_rate,
                                   cut='post', attention=Attention)(x)
 
-            elif block == 0:
+            elif block == 0 and dilation_rate == 1:
                 x = ResidualBlock(filters, 
                                   stage, 
                                   block, 
-                                  strides=(1, 1), 
+                                  strides=(2, 2),
                                   dilation_rate = dilation_rate,
                                   cut='post', attention=Attention)(x)
 
@@ -301,8 +301,8 @@ def ResNet(model_params, input_shape=None, input_tensor=None, include_top=True,
 # -------------------------------------------------------------------------
 
 MODELS_PARAMS = {
-    # 'resnet18dilated': ModelParams('resnet18dilated', (2, 2, 2, 2), (1, 1, 2, 4), residual_conv_block, None),
-    'resnet18': ModelParams('resnet18', (2, 2, 2, 2), (1,1,2,4), residual_conv_block, None),
+    'resnet18dilated': ModelParams('resnet18', (2, 2, 2, 2), (1, 1, 2, 4), residual_conv_block, None),
+    'resnet18': ModelParams('resnet18', (2, 2, 2, 2), (1,1,1,1), residual_conv_block, None),
     'resnet34': ModelParams('resnet34', (3, 4, 6, 3), (1,1,2,4), residual_conv_block, None),
     'resnet50': ModelParams('resnet50', (3, 4, 6, 3), (1,1,1,1), residual_bottleneck_block, None),
     'resnet101': ModelParams('resnet101', (3, 4, 23, 3), (1,1,1,1), residual_bottleneck_block, None),
