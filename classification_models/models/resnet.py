@@ -321,7 +321,7 @@ def ResNet18Dilated(input_shape=None, input_tensor=None, weights=None, classes=1
         include_top=include_top,
         classes=classes,
         weights=weights,
-        initial_strides=1
+        initial_strides=1,
         **kwargs
     )
 
