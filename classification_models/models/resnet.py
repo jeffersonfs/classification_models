@@ -252,11 +252,11 @@ def ResNet(model_params, input_shape=None, input_tensor=None, include_top=True,
                                   dilation_rate = dilation_rate,
                                   cut='post', attention=Attention)(x)
 
-            elif block == 0 and dilation_rate == 1:
+            elif block == 0:
                 x = ResidualBlock(filters, 
                                   stage, 
                                   block, 
-                                  strides=(2, 2),
+                                  strides=(1, 1),
                                   dilation_rate = dilation_rate,
                                   cut='post', attention=Attention)(x)
 
@@ -321,7 +321,7 @@ def ResNet18Dilated(input_shape=None, input_tensor=None, weights=None, classes=1
         include_top=include_top,
         classes=classes,
         weights=weights,
-        initial_strides=1,
+        initial_strides=2,
         **kwargs
     )
 
