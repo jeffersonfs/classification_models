@@ -10,6 +10,7 @@ class ModelsFactory:
     _models = {
 
         # ResNets
+        'resnet18dilated': [rn.ResNet18Dilated, rn.preprocess_input],
         'resnet18': [rn.ResNet18, rn.preprocess_input],
         'resnet34': [rn.ResNet34, rn.preprocess_input],
         'resnet50': [rn.ResNet50, rn.preprocess_input],
