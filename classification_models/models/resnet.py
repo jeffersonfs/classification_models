@@ -302,8 +302,9 @@ def ResNet(model_params, input_shape=None, input_tensor=None, include_top=True,
 
 MODELS_PARAMS = {
     'resnet18dilated': ModelParams('resnet18', (2, 2, 2, 2), (1, 1, 2, 4), residual_conv_block, None),
+    'resnet34dilated': ModelParams('resnet34', (3, 4, 6, 3), (1, 1, 2, 4), residual_conv_block, None),
     'resnet18': ModelParams('resnet18', (2, 2, 2, 2), (1,1,1,1), residual_conv_block, None),
-    'resnet34': ModelParams('resnet34', (3, 4, 6, 3), (1,1,2,4), residual_conv_block, None),
+    'resnet34': ModelParams('resnet34', (3, 4, 6, 3), (1,1,1,1), residual_conv_block, None),
     'resnet50': ModelParams('resnet50', (3, 4, 6, 3), (1,1,1,1), residual_bottleneck_block, None),
     'resnet101': ModelParams('resnet101', (3, 4, 23, 3), (1,1,1,1), residual_bottleneck_block, None),
     'resnet152': ModelParams('resnet152', (3, 8, 36, 3), (1,1,1,1), residual_bottleneck_block, None),
@@ -336,6 +337,16 @@ def ResNet18(input_shape=None, input_tensor=None, weights=None, classes=1000, in
         **kwargs
     )
 
+def ResNet34Dilated(input_shape=None, input_tensor=None, weights=None, classes=1000, include_top=True, **kwargs):
+    return ResNet(
+        MODELS_PARAMS['resnet34dilated'],
+        input_shape=input_shape,
+        input_tensor=input_tensor,
+        include_top=include_top,
+        classes=classes,
+        weights=weights,
+        **kwargs
+    )
 
 def ResNet34(input_shape=None, input_tensor=None, weights=None, classes=1000, include_top=True, **kwargs):
     return ResNet(
