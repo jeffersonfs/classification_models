@@ -423,7 +423,7 @@ def SEResNet34(input_shape=None, input_tensor=None, weights=None, classes=1000, 
 def preprocess_input(x, **kwargs):
     return x
 
-
+setattr(ResNet34Dilated, '__doc__', ResNet.__doc__)
 setattr(ResNet18Dilated, '__doc__', ResNet.__doc__)
 setattr(ResNet18, '__doc__', ResNet.__doc__)
 setattr(ResNet34, '__doc__', ResNet.__doc__)
