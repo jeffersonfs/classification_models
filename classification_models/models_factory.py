@@ -13,6 +13,7 @@ class ModelsFactory:
         'resnet18dilated': [rn.ResNet18Dilated, rn.preprocess_input],
         'resnet18': [rn.ResNet18, rn.preprocess_input],
         'resnet34': [rn.ResNet34, rn.preprocess_input],
+        'resnet34dilated': [rn.ResNet34Dilated, rn.preprocess_input],
         'resnet50': [rn.ResNet50, rn.preprocess_input],
         'resnet101': [rn.ResNet101, rn.preprocess_input],
         'resnet152': [rn.ResNet152, rn.preprocess_input],
