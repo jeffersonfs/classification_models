@@ -78,7 +78,7 @@ def residual_conv_block(filters, stage, block, strides=(1, 1), dilation_rate=1, 
         bn_params = get_bn_params()
         conv_name, bn_name, relu_name, sc_name = handle_block_names(stage, block)
 
-        x = layers.BatchNormalization(name=bn_name + '1', **bn_params)(input_tensor)
+        x = bn(name=bn_name + '1', **bn_params)(input_tensor)
         x = layers.Activation('relu', name=relu_name + '1')(x)
 
         # defining shortcut connection
@@ -94,7 +94,7 @@ def residual_conv_block(filters, stage, block, strides=(1, 1), dilation_rate=1, 
         x = layers.ZeroPadding2D(padding=(dilation_rate, dilation_rate))(x)
         x = layers.Conv2D(filters, (3, 3), strides=strides, dilation_rate=dilation_rate,  name=conv_name + '1', **conv_params)(x)
 
-        x = layers.BatchNormalization(name=bn_name + '2', **bn_params)(x)
+        x = bn(name=bn_name + '2', **bn_params)(x)
         x = layers.Activation('relu', name=relu_name + '2')(x)
         x = layers.ZeroPadding2D(padding=(1, 1))(x)
         x = layers.Conv2D(filters, (3, 3), name=conv_name + '2', **conv_params)(x)
@@ -131,7 +131,7 @@ def residual_bottleneck_block(filters, stage, block, strides=None, attention=Non
         bn_params = get_bn_params()
         conv_name, bn_name, relu_name, sc_name = handle_block_names(stage, block)
 
-        x = layers.BatchNormalization(name=bn_name + '1', **bn_params)(input_tensor)
+        x = bn(name=bn_name + '1', **bn_params)(input_tensor)
         x = layers.Activation('relu', name=relu_name + '1')(x)
 
         # defining shortcut connection
@@ -145,12 +145,12 @@ def residual_bottleneck_block(filters, stage, block, strides=None, attention=Non
         # continue with convolution layers
         x = layers.Conv2D(filters, (1, 1), name=conv_name + '1', **conv_params)(x)
 
-        x = layers.BatchNormalization(name=bn_name + '2', **bn_params)(x)
+        x = bn(name=bn_name + '2', **bn_params)(x)
         x = layers.Activation('relu', name=relu_name + '2')(x)
         x = layers.ZeroPadding2D(padding=(1, 1))(x)
         x = layers.Conv2D(filters, (3, 3), strides=strides, dilation_rate=dilation_rate, name=conv_name + '2', **conv_params)(x)
 
-        x = layers.BatchNormalization(name=bn_name + '3', **bn_params)(x)
+        x = bn(name=bn_name + '3', **bn_params)(x)
         x = layers.Activation('relu', name=relu_name + '3')(x)
         x = layers.Conv2D(filters * 4, (1, 1), name=conv_name + '3', **conv_params)(x)
 
@@ -172,7 +172,7 @@ def residual_bottleneck_block(filters, stage, block, strides=None, attention=Non
 
 
 def ResNet(model_params, input_shape=None, input_tensor=None, include_top=True,
-           classes=1000, weights='imagenet', initial_strides=1, **kwargs):
+           classes=1000, weights='imagenet', initial_strides=1, batch_normalization=None, **kwargs):
     """Instantiates the ResNet, SEResNet architecture.
     Optionally loads weights pre-trained on ImageNet.
     Note that the data format convention used by the model is
@@ -204,8 +204,13 @@ def ResNet(model_params, input_shape=None, input_tensor=None, include_top=True,
             or invalid input shape.
     """
 
-    global backend, layers, models, keras_utils
+    global backend, layers, models, keras_utils, bn
     backend, layers, models, keras_utils = get_submodules_from_kwargs(kwargs)
+    
+    if batch_normalization is None:
+        bn = layers.BatchNormalization
+    else:
+        bn = batch_normalization
 
     if input_tensor is None:
         img_input = layers.Input(shape=input_shape, name='data')
@@ -229,10 +234,10 @@ def ResNet(model_params, input_shape=None, input_tensor=None, include_top=True,
     init_filters = 64
 
     # resnet bottom
-    x = layers.BatchNormalization(name='bn_data', **no_scale_bn_params)(img_input)
+    x = bn(name='bn_data', **no_scale_bn_params)(img_input)
     x = layers.ZeroPadding2D(padding=((3, 3), (3,3))) (x)
     x = layers.Conv2D(init_filters, (7, 7), strides=(initial_strides,initial_strides), name='conv0', **conv_params)(x)
-    x = layers.BatchNormalization(name='bn0', **bn_params)(x)
+    x = bn(name='bn0', **bn_params)(x)
     x = layers.Activation('relu', name='relu0')(x)
     x = layers.ZeroPadding2D(padding=((1, 1), (1, 1)) )(x)
     x = layers.MaxPooling2D((3, 3), strides=(2, 2), padding='valid', name='pooling0')(x)
@@ -268,7 +273,7 @@ def ResNet(model_params, input_shape=None, input_tensor=None, include_top=True,
                                   dilation_rate = dilation_rate,
                                   cut='pre', attention=Attention)(x)
 
-    x = layers.BatchNormalization(name='bn1', **bn_params)(x)
+    x = bn(name='bn1', **bn_params)(x)
     x = layers.Activation('relu', name='relu1')(x)
 
     # resnet top
