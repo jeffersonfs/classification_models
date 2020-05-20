@@ -172,7 +172,7 @@ def residual_bottleneck_block(filters, stage, block, strides=None, attention=Non
 
 
 def ResNet(model_params, input_shape=None, input_tensor=None, include_top=True,
-           classes=1000, weights='imagenet', initial_strides=1, batch_normalization=None, **kwargs):
+           classes=1000, weights='imagenet', initial_strides=2, batch_normalization=None, **kwargs):
     """Instantiates the ResNet, SEResNet architecture.
     Optionally loads weights pre-trained on ImageNet.
     Note that the data format convention used by the model is
@@ -306,12 +306,18 @@ def ResNet(model_params, input_shape=None, input_tensor=None, include_top=True,
 # -------------------------------------------------------------------------
 
 MODELS_PARAMS = {
+    'resnet18': ModelParams('resnet18', (2, 2, 2, 2), (1, 1, 1, 1), residual_conv_block, None),
     'resnet18dilated': ModelParams('resnet18', (2, 2, 2, 2), (1, 1, 2, 4), residual_conv_block, None),
+
+    'resnet34': ModelParams('resnet34', (3, 4, 6, 3), (1, 1, 1, 1), residual_conv_block, None),
     'resnet34dilated': ModelParams('resnet34', (3, 4, 6, 3), (1, 1, 2, 4), residual_conv_block, None),
-    'resnet18': ModelParams('resnet18', (2, 2, 2, 2), (1,1,1,1), residual_conv_block, None),
-    'resnet34': ModelParams('resnet34', (3, 4, 6, 3), (1,1,1,1), residual_conv_block, None),
-    'resnet50': ModelParams('resnet50', (3, 4, 6, 3), (1,1,1,1), residual_bottleneck_block, None),
-    'resnet101': ModelParams('resnet101', (3, 4, 23, 3), (1,1,1,1), residual_bottleneck_block, None),
+
+    'resnet50': ModelParams('resnet50', (3, 4, 6, 3), (1, 1, 1, 1), residual_bottleneck_block, None),
+    'resnet50dilated': ModelParams('resnet50', (3, 4, 6, 3), (1, 1, 2, 4), residual_bottleneck_block, None),
+
+    'resnet101': ModelParams('resnet101', (3, 4, 23, 3), (1, 1, 1, 1), residual_bottleneck_block, None),
+    'resnet101dilated': ModelParams('resnet101', (3, 4, 23, 3), (1, 1, 2, 4), residual_bottleneck_block, None),
+
     'resnet152': ModelParams('resnet152', (3, 8, 36, 3), (1,1,1,1), residual_bottleneck_block, None),
     'seresnet18': ModelParams('seresnet18', (2, 2, 2, 2), (1,1,1,1), residual_conv_block, ChannelSE),
     'seresnet34': ModelParams('seresnet34', (3, 4, 6, 3), (1,1,1,1), residual_conv_block, ChannelSE),
@@ -368,6 +374,29 @@ def ResNet34(input_shape=None, input_tensor=None, weights=None, classes=1000, in
 def ResNet50(input_shape=None, input_tensor=None, weights=None, classes=1000, include_top=True, **kwargs):
     return ResNet(
         MODELS_PARAMS['resnet50'],
+        input_shape=input_shape,
+        input_tensor=input_tensor,
+        include_top=include_top,
+        classes=classes,
+        weights=weights,
+        **kwargs
+    )
+
+def ResNet50Dilated(input_shape=None, input_tensor=None, weights=None, classes=1000, include_top=True, **kwargs):
+    return ResNet(
+        MODELS_PARAMS['resnet50dilated'],
+        input_shape=input_shape,
+        input_tensor=input_tensor,
+        include_top=include_top,
+        classes=classes,
+        weights=weights,
+        **kwargs
+    )
+
+
+def ResNet101Dilated(input_shape=None, input_tensor=None, weights=None, classes=1000, include_top=True, **kwargs):
+    return ResNet(
+        MODELS_PARAMS['resnet101dilated'],
         input_shape=input_shape,
         input_tensor=input_tensor,
         include_top=include_top,
